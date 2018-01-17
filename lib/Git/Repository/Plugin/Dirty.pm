@@ -3,7 +3,80 @@ package Git::Repository::Plugin::Dirty;
 use strict;
 use warnings;
 
-$Git::Repository::Plugin::Dirty::VERSION = '0.01';
+our $VERSION = '0.01';
+
+use Git::Repository::Plugin;
+our @ISA = qw( Git::Repository::Plugin );
+
+sub _keywords { return qw( is_dirty has_untracked has_unstaged_changes has_staged_changes diff_unstaged diff_staged ) }
+
+sub is_dirty {
+    my ( $git, $opts ) = @_;
+    return 1 if $git->has_untracked() || $git->has_unstaged_changes();
+    return 1 if $opts->{untracked} && $git->has_untracked();
+    return;
+}
+
+sub has_untracked {
+    my ($git) = @_;
+    my @untracked = map { s/^?? //; $_ } $git->run( "status", "-u", "-s", "--porcelain" );
+    return @untracked;
+}
+
+sub has_unstaged_changes {
+    my ($git) = @_;
+    eval { $git->run( "diff", "--quiet" ) };
+    my $err  = $@;
+    my $exit = $? >> 8;
+
+    die $@ if $exit != 0 && $exit != 1;
+    return if $exit == 0;
+    return $exit;    # has to be 1 at this point (unless we break it above!!!)
+}
+
+sub has_staged_changes {
+    my ($git) = @_;
+    eval { $git->run( "diff", "--quiet", "--cached" ) };
+    my $err  = $@;
+    my $exit = $? >> 8;
+
+    die $@ if $exit != 0 && $exit != 1;
+    return if $exit == 0;
+    return $exit;    # has to be 1 at this point (unless we break it above!!!)
+}
+
+sub diff_unstaged {
+    my ( $git, $handler, $undocumented_cached_flag ) = @_;
+    my @output;
+    $handler ||= sub { my ( $self, $line ) = @_; push @output, $line; return 1; };
+
+    my $diffcmd =
+        $undocumented_cached_flag
+      ? $git->command( 'diff', '--cached' )
+      : $git->command('diff');
+    my $diffout = $diffcmd->stdout;
+    my $buffer;
+    while ( $buffer = <$diffout> ) {
+        last if !$handler->( $git, $buffer );
+    }
+    $diffcmd->close;
+
+    return @output;
+}
+
+sub diff_staged {
+    my ( $git, $handler ) = @_;
+    @_ = ( $git, $handler, 1 );
+    goto &diff_unstaged;
+}
+
+# sub diff_all {
+#     my ( $git ) = @_;
+#     return {
+#         unstaged => [$git->diff],
+#         staged => [$git->diff_cached],
+#     };
+# }
 
 1;
 
@@ -11,8 +84,7 @@ __END__
 
 =head1 NAME
 
-Git::Repository::Plugin::Dirty - [One line description of module's purpose here]
-
+Git::Repository::Plugin::Dirty - Methods to inspect the dirtyness of a git repository
 
 =head1 VERSION
 
@@ -20,14 +92,19 @@ This document describes Git::Repository::Plugin::Dirty version 0.01
 
 =head1 SYNOPSIS
 
-    use Git::Repository::Plugin::Dirty;
+    use Git::Repository qw(Dirty);
 
-=for author to fill in:
-    Brief code example(s) here showing commonest usage(s).
-    This section will be as far as many users bother reading
-    so make it as educational and exeplary as possible.
-  
-  
+    my $git = Git::Repository->new( { fatal => ["!0"], quiet => ( $verbose ? 0 : 1 ), } );
+
+    if ($git->is_dirty) {
+        if ($force) {
+            …
+        }
+        else {
+            die "Repo is dirty. Please commit or stash any staged or unstaged changes and try again.\n";
+        }
+    }
+
 =head1 DESCRIPTION
 
 =for author to fill in:
@@ -35,7 +112,7 @@ This document describes Git::Repository::Plugin::Dirty version 0.01
     Use subsections (=head2, =head3) as appropriate.
 
 
-=head1 INTERFACE 
+=head1 INTERFACE
 
 =for author to fill in:
     Write a separate section listing the public components of the modules
@@ -75,7 +152,7 @@ This document describes Git::Repository::Plugin::Dirty version 0.01
     files, and the meaning of any environment variables or properties
     that can be set. These descriptions must also include details of any
     configuration language used.
-  
+
 Git::Repository::Plugin::Dirty requires no configuration files or environment variables.
 
 
