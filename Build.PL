@@ -8,7 +8,14 @@ my $builder = Module::Build->new(
     dist_author       => 'Daniel Muey <http://drmuey.com/cpan_contact.pl>',
     dist_version_from => 'lib/Git/Repository/Plugin/Dirty.pm',
     requires          => {
-        'Test::More' => 0,
+        'Git::Repository::Plugin' => 0,
+        'Test::More'              => 0,    # unit tests
+        'Test::Trap'              => 0,    # unit tests
+        'Path::Tiny'              => 0,    # unit tests
+        'Capture::Tiny'           => 0,    # unit tests
+        'File::Temp'              => 0,    # unit tests
+        Cwd                       => 0,    # unit tests
+        'Git::Repository'         => 0,    # unit tests
     },
 
     # delete_share => '.', # NYI https://rt.cpan.org/Ticket/Display.html?id=92863

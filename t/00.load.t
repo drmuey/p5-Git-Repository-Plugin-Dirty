@@ -6,6 +6,11 @@ use Test::Trap;
 use Path::Tiny;
 use Capture::Tiny qw(capture);
 
+use File::Temp;
+use Cwd;
+
+use Git::Repository qw(Dirty);
+
 BEGIN { sub _test_wrapper };    # for syntactic sugarness
 
 my $gitbin = '/usr/bin/git';
@@ -15,11 +20,6 @@ if ( !-x $gitbin ) {
 else {
     plan tests => 57;
 }
-
-use File::Temp;
-use Cwd;
-
-use Git::Repository qw(Dirty);
 
 diag("Testing Git::Repository::Plugin::Dirty $Git::Repository::Plugin::Dirty::VERSION");
 ok( exists $INC{'Git/Repository/Plugin/Dirty.pm'}, "Dirty loaded as plugin" );

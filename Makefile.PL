@@ -17,7 +17,14 @@ WriteMakefile(
     ABSTRACT_FROM => 'lib/Git/Repository/Plugin/Dirty.pm',
     PL_FILES      => {},
     PREREQ_PM     => {
-        'Test::More' => 0,
+        'Git::Repository::Plugin' => 0,
+        'Test::More'              => 0,    # unit tests
+        'Test::Trap'              => 0,    # unit tests
+        'Path::Tiny'              => 0,    # unit tests
+        'Capture::Tiny'           => 0,    # unit tests
+        'File::Temp'              => 0,    # unit tests
+        Cwd                       => 0,    # unit tests
+        'Git::Repository'         => 0,    # unit tests
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'Git-Repository-Plugin-Dirty-*' },
