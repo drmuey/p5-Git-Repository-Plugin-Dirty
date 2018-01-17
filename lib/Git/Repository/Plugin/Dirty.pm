@@ -81,7 +81,7 @@ __END__
 
 =head1 NAME
 
-Git::Repository::Plugin::Dirty - Methods to inspect the dirtyness of a git repository
+Git::Repository::Plugin::Dirty - methods to inspect the dirtiness of a git repository
 
 =head1 VERSION
 
