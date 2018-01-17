@@ -8,7 +8,7 @@ our $VERSION = '0.01';
 use Git::Repository::Plugin;
 our @ISA = qw( Git::Repository::Plugin );
 
-sub _keywords { return qw( is_dirty has_untracked has_unstaged_changes has_staged_changes diff_unstaged diff_staged ) }
+sub _keywords { return qw( is_dirty has_untracked has_unstaged_changes has_staged_changes diff_unstaged diff_staged current_branch ) }
 
 sub is_dirty {
     my ( $git, $opts ) = @_;
@@ -70,13 +70,10 @@ sub diff_staged {
     goto &diff_unstaged;
 }
 
-# sub diff_all {
-#     my ( $git ) = @_;
-#     return {
-#         unstaged => [$git->diff],
-#         staged => [$git->diff_cached],
-#     };
-# }
+sub current_branch {
+    my ($git) = @_;
+    return $git->run(qw(rev-parse --abbrev-ref HEAD));
+}
 
 1;
 

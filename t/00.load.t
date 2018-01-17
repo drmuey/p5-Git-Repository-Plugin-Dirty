@@ -13,7 +13,7 @@ if ( !-x $gitbin ) {
     plan skip_all => "$gitbin required for these tests";
 }
 else {
-    plan tests => 55;
+    plan tests => 57;
 }
 
 use File::Temp;
@@ -25,6 +25,13 @@ diag("Testing Git::Repository::Plugin::Dirty $Git::Repository::Plugin::Dirty::VE
 ok( exists $INC{'Git/Repository/Plugin/Dirty.pm'}, "Dirty loaded as plugin" );
 
 my $starting_dir = cwd();
+
+_test_wrapper "current_branch()" => sub {
+    my ( $git, $dir, $name ) = @_;
+    is( $git->current_branch(), "master", "current_branch() returns current branch of initiated object" );
+    capture { $git->run( "checkout", "-b", "ohhai-$$" ) };
+    is( $git->current_branch(), "ohhai-$$", "current_branch() returns current branch after changing branch" );
+};
 
 _test_wrapper "clean repo" => sub {
     my ( $git, $dir, $name ) = @_;
