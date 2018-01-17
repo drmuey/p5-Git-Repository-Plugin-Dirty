@@ -13,7 +13,7 @@ if ( !-x $gitbin ) {
     plan skip_all => "$gitbin required for these tests";
 }
 else {
-    plan tests => 15;
+    plan tests => 55;
 }
 
 use File::Temp;
@@ -49,7 +49,20 @@ _test_wrapper "unstaged changes" => sub {
     my ( $git, $dir, $name ) = @_;
     path('baz/file')->spew("updated");
 
-    ok(1);
+    ok( $git->is_dirty(), "$name: is_dirty() returns true" );
+    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    is_deeply( [ $git->has_untracked() ], [], "$name: has_untracked() returns empty list" );
+    ok( $git->has_unstaged_changes(),        "$name: has_unstaged_changes() returns true" );
+    ok( !$git->has_staged_changes(),         "$name: has_staged_changes() returns false" );
+    ok( scalar( $git->diff_unstaged() ) > 0, "$name: diff_unstaged() returns diff lines as list" );
+    is_deeply( [ $git->diff_staged() ], [], "$name: diff_staged() returns diff lines as list" );
+
+    my @lines;
+    $git->diff_unstaged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    ok( scalar(@lines) > 0, "$name: diff_unstaged(\$handler) handler processes each line" );
+    @lines = ();
+    $git->diff_staged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    is_deeply( \@lines, [], "$name: diff_staged(\$handler) handler processes each line" );
 };
 
 _test_wrapper "staged changes" => sub {
@@ -57,14 +70,40 @@ _test_wrapper "staged changes" => sub {
     path('foo/file')->spew("updated");
     $git->run( "add", 'foo/file' );
 
-    ok(1);
+    ok( $git->is_dirty(), "$name: is_dirty() returns true" );
+    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    is_deeply( [ $git->has_untracked() ], [], "$name: has_untracked() returns empty list" );
+    ok( !$git->has_unstaged_changes(), "$name: has_unstaged_changes() returns true" );
+    ok( $git->has_staged_changes(),    "$name: has_staged_changes() returns false" );
+    is_deeply( [ $git->diff_unstaged() ], [], "$name: diff_unstaged() returns empty list" );
+    ok( scalar( $git->diff_staged() ) > 0, "$name: diff_staged() returns diff lines as list" );
+
+    my @lines;
+    $git->diff_unstaged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    is_deeply( \@lines, [], "$name: diff_unstaged(\$handler) handler processes each line" );
+    @lines = ();
+    $git->diff_staged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    ok( scalar(@lines) > 0, "$name: diff_staged(\$handler) handler processes each line" );
 };
 
 _test_wrapper "untracked files" => sub {
     my ( $git, $dir, $name ) = @_;
     path('foo/new')->spew("new file");
 
-    ok(1);
+    ok( !$git->is_dirty(), "$name: is_dirty() returns false" );
+    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    is_deeply( [ $git->has_untracked() ], ['foo/new'], "$name: has_untracked() returns list" );
+    ok( !$git->has_unstaged_changes(), "$name: has_unstaged_changes() returns false" );
+    ok( !$git->has_staged_changes(),   "$name: has_staged_changes() returns false" );
+    is_deeply( [ $git->diff_unstaged() ], [], "$name: diff_unstaged() returns empty list" );
+    is_deeply( [ $git->diff_staged() ],   [], "$name: diff_staged() returns empty list" );
+
+    my @lines;
+    $git->diff_unstaged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    is_deeply( \@lines, [], "$name: diff_unstaged(\$handler) handler processes each line" );
+    @lines = ();
+    $git->diff_staged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    is_deeply( \@lines, [], "$name: diff_staged(\$handler) handler processes each line" );
 };
 
 _test_wrapper "unstaged changes && staged changes" => sub {
@@ -73,7 +112,20 @@ _test_wrapper "unstaged changes && staged changes" => sub {
     path('foo/file')->spew("updated");
     $git->run( "add", 'foo/file' );
 
-    ok(1);
+    ok( $git->is_dirty(), "$name: is_dirty() returns true" );
+    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    is_deeply( [ $git->has_untracked() ], [], "$name: has_untracked() returns empty list" );
+    ok( $git->has_unstaged_changes(),        "$name: has_unstaged_changes() returns true" );
+    ok( $git->has_staged_changes(),          "$name: has_staged_changes() returns true" );
+    ok( scalar( $git->diff_unstaged() ) > 0, "$name: diff_unstaged() returns diff lines as list" );
+    ok( scalar( $git->diff_staged() ) > 0,   "$name: diff_staged() returns diff lines as list" );
+
+    my @lines;
+    $git->diff_unstaged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    ok( scalar(@lines) > 0, "$name: diff_unstaged(\$handler) handler processes each line" );
+    @lines = ();
+    $git->diff_staged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    ok( scalar(@lines) > 0, "$name: diff_staged(\$handler) handler processes each line" );
 };
 
 _test_wrapper "unstaged changes && staged changes && untracked files" => sub {
@@ -83,7 +135,20 @@ _test_wrapper "unstaged changes && staged changes && untracked files" => sub {
     $git->run( "add", 'foo/file' );
     path('foo/new')->spew("new file");
 
-    ok(1);
+    ok( $git->is_dirty(), "$name: is_dirty() returns true" );
+    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    is_deeply( [ $git->has_untracked() ], ['foo/new'], "$name: has_untracked() returns list" );
+    ok( $git->has_unstaged_changes(),        "$name: has_unstaged_changes() returns true" );
+    ok( $git->has_staged_changes(),          "$name: has_staged_changes() returns true" );
+    ok( scalar( $git->diff_unstaged() ) > 0, "$name: diff_unstaged() returns diff lines as list" );
+    ok( scalar( $git->diff_staged() ) > 0,   "$name: diff_staged() returns diff lines as list" );
+
+    my @lines;
+    $git->diff_unstaged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    ok( scalar(@lines) > 0, "$name: diff_unstaged(\$handler) handler processes each line" );
+    @lines = ();
+    $git->diff_staged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
+    ok( scalar(@lines) > 0, "$name: diff_staged(\$handler) handler processes each line" );
 };
 
 ###############
