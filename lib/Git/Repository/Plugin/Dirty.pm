@@ -11,9 +11,9 @@ our @ISA = qw( Git::Repository::Plugin );
 sub _keywords { return qw( is_dirty has_untracked has_unstaged_changes has_staged_changes diff_unstaged diff_staged current_branch ) }
 
 sub is_dirty {
-    my ( $git, $opts ) = @_;
+    my ( $git, %opts ) = @_;
     return 1 if $git->has_staged_changes() || $git->has_unstaged_changes();
-    return 1 if $opts->{untracked} && $git->has_untracked();
+    return 1 if $opts{untracked} && $git->has_untracked();
     return;
 }
 

@@ -37,7 +37,7 @@ _test_wrapper "clean repo" => sub {
     my ( $git, $dir, $name ) = @_;
 
     ok( !$git->is_dirty(), "$name: is_dirty() returns false" );
-    ok( !$git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns false" );
+    ok( !$git->is_dirty( untracked => 1 ), "$name: is_dirty(untracked => 1) returns false" );
     is_deeply( [ $git->has_untracked() ], [], "$name: has_untracked() returns empty list" );
     ok( !$git->has_unstaged_changes(), "$name: has_unstaged_changes() returns false" );
     ok( !$git->has_staged_changes(),   "$name: has_staged_changes() returns false" );
@@ -57,7 +57,7 @@ _test_wrapper "unstaged changes" => sub {
     path('baz/file')->spew("updated");
 
     ok( $git->is_dirty(), "$name: is_dirty() returns true" );
-    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    ok( $git->is_dirty( untracked => 1 ), "$name: is_dirty(untracked => 1) returns true" );
     is_deeply( [ $git->has_untracked() ], [], "$name: has_untracked() returns empty list" );
     ok( $git->has_unstaged_changes(),        "$name: has_unstaged_changes() returns true" );
     ok( !$git->has_staged_changes(),         "$name: has_staged_changes() returns false" );
@@ -78,7 +78,7 @@ _test_wrapper "staged changes" => sub {
     $git->run( "add", 'foo/file' );
 
     ok( $git->is_dirty(), "$name: is_dirty() returns true" );
-    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    ok( $git->is_dirty( untracked => 1 ), "$name: is_dirty(untracked => 1) returns true" );
     is_deeply( [ $git->has_untracked() ], [], "$name: has_untracked() returns empty list" );
     ok( !$git->has_unstaged_changes(), "$name: has_unstaged_changes() returns true" );
     ok( $git->has_staged_changes(),    "$name: has_staged_changes() returns false" );
@@ -98,7 +98,7 @@ _test_wrapper "untracked files" => sub {
     path('foo/new')->spew("new file");
 
     ok( !$git->is_dirty(), "$name: is_dirty() returns false" );
-    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    ok( $git->is_dirty( untracked => 1 ), "$name: is_dirty(untracked => 1) returns true" );
     is_deeply( [ $git->has_untracked() ], ['foo/new'], "$name: has_untracked() returns list" );
     ok( !$git->has_unstaged_changes(), "$name: has_unstaged_changes() returns false" );
     ok( !$git->has_staged_changes(),   "$name: has_staged_changes() returns false" );
@@ -120,7 +120,7 @@ _test_wrapper "unstaged changes && staged changes" => sub {
     $git->run( "add", 'foo/file' );
 
     ok( $git->is_dirty(), "$name: is_dirty() returns true" );
-    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    ok( $git->is_dirty( untracked => 1 ), "$name: is_dirty(untracked => 1) returns true" );
     is_deeply( [ $git->has_untracked() ], [], "$name: has_untracked() returns empty list" );
     ok( $git->has_unstaged_changes(),        "$name: has_unstaged_changes() returns true" );
     ok( $git->has_staged_changes(),          "$name: has_staged_changes() returns true" );
@@ -143,7 +143,7 @@ _test_wrapper "unstaged changes && staged changes && untracked files" => sub {
     path('foo/new')->spew("new file");
 
     ok( $git->is_dirty(), "$name: is_dirty() returns true" );
-    ok( $git->is_dirty( { untracked => 1 } ), "$name: is_dirty({untracked => 1}) returns true" );
+    ok( $git->is_dirty( untracked => 1 ), "$name: is_dirty(untracked => 1) returns true" );
     is_deeply( [ $git->has_untracked() ], ['foo/new'], "$name: has_untracked() returns list" );
     ok( $git->has_unstaged_changes(),        "$name: has_unstaged_changes() returns true" );
     ok( $git->has_staged_changes(),          "$name: has_staged_changes() returns true" );
