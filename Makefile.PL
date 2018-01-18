@@ -25,6 +25,7 @@ WriteMakefile(
         'File::Temp'              => 0,    # unit tests
         Cwd                       => 0,    # unit tests
         'Git::Repository'         => 0,    # unit tests
+        'Test::Exception'         => 0,    # unit tests
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'Git-Repository-Plugin-Dirty-*' },

@@ -3,6 +3,7 @@ use warnings;
 
 use Test::More;
 use Test::Trap;
+use Test::Exception;
 use Path::Tiny;
 use Capture::Tiny qw(capture);
 
@@ -18,7 +19,7 @@ if ( !-x $gitbin ) {
     plan skip_all => "$gitbin required for these tests";
 }
 else {
-    plan tests => 57;
+    plan tests => 71;
 }
 
 diag("Testing Git::Repository::Plugin::Dirty $Git::Repository::Plugin::Dirty::VERSION");
@@ -54,7 +55,7 @@ _test_wrapper "clean repo" => sub {
 
 _test_wrapper "unstaged changes" => sub {
     my ( $git, $dir, $name ) = @_;
-    path('baz/file')->spew("updated");
+    path('baz/file')->spew("updated\nelated");
 
     ok( $git->is_dirty(), "$name: is_dirty() returns true" );
     ok( $git->is_dirty( untracked => 1 ), "$name: is_dirty(untracked => 1) returns true" );
@@ -74,7 +75,7 @@ _test_wrapper "unstaged changes" => sub {
 
 _test_wrapper "staged changes" => sub {
     my ( $git, $dir, $name ) = @_;
-    path('foo/file')->spew("updated");
+    path('foo/file')->spew("created\nelated");
     $git->run( "add", 'foo/file' );
 
     ok( $git->is_dirty(), "$name: is_dirty() returns true" );
@@ -115,8 +116,8 @@ _test_wrapper "untracked files" => sub {
 
 _test_wrapper "unstaged changes && staged changes" => sub {
     my ( $git, $dir, $name ) = @_;
-    path('baz/file')->spew("updated");
-    path('foo/file')->spew("updated");
+    path('baz/file')->spew("updated\nelated");
+    path('foo/file')->spew("created\nelated");
     $git->run( "add", 'foo/file' );
 
     ok( $git->is_dirty(), "$name: is_dirty() returns true" );
@@ -137,8 +138,8 @@ _test_wrapper "unstaged changes && staged changes" => sub {
 
 _test_wrapper "unstaged changes && staged changes && untracked files" => sub {
     my ( $git, $dir, $name ) = @_;
-    path('baz/file')->spew("updated");
-    path('foo/file')->spew("updated");
+    path('baz/file')->spew("updated\nelated");
+    path('foo/file')->spew("created\nelated");
     $git->run( "add", 'foo/file' );
     path('foo/new')->spew("new file");
 
@@ -156,6 +157,50 @@ _test_wrapper "unstaged changes && staged changes && untracked files" => sub {
     @lines = ();
     $git->diff_staged( sub { my ( $git, $line ) = @_; push @lines, "$git$line" } );
     ok( scalar(@lines) > 0, "$name: diff_staged(\$handler) handler processes each line" );
+};
+
+#### misc ##
+_test_wrapper "has_*_changes() re-throw from git obj" => sub {
+    my ( $git, $dir, $name ) = @_;
+
+    no warnings 'redefine';
+    my $exit = 0;
+    local *Git::Repository::run = sub { $? = $exit; die "You have failed me for the last time!\n" };
+
+    for my $meth (qw(has_staged_changes has_unstaged_changes)) {
+        $exit = 0;
+        lives_ok { $git->$meth() } "$name: $meth() does not when exit is 0";
+
+        $exit = 256;
+        lives_ok { $git->$meth() } "$name: $meth() does not when exit is 256";
+
+        $exit = 128;
+        throws_ok { $git->$meth() } qr/You have failed me for the last time/, "$name: $meth() does when exit is 128";
+
+        $exit = 129;
+        throws_ok { $git->$meth() } qr/You have failed me for the last time/, "$name: $meth() does when exit is 129";
+    }
+};
+
+_test_wrapper "diff_*() handlers returning false" => sub {
+    my ( $git, $dir, $name ) = @_;
+    path('baz/file')->spew("updated\nelated");
+    path('foo/file')->spew("created\nelated");
+    $git->run( "add", 'foo/file' );
+
+    for my $meth (qw(diff_unstaged diff_staged)) {
+        my $count = 0;
+        $git->$meth(
+            sub {
+                my ( $git, $line ) = @_;
+                isa_ok( $git, 'Git::Repository', "$name: $meth() first arg is git object" );
+                ok( length $line, "$name: $meth() first arg is line" );
+                $count++;
+                return;
+            }
+        );
+        is( $count, 1, "$name: $meth() stopped after return false" );
+    }
 };
 
 ###############

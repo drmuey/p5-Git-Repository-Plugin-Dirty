@@ -27,23 +27,15 @@ sub has_untracked {
 sub has_unstaged_changes {
     my ($git) = @_;
     eval { $git->run( "diff", "--quiet" ) };
-    my $err  = $@;
-    my $exit = $? >> 8;
-
-    die $@ if $exit != 0 && $exit != 1;
-    return if $exit == 0;
-    return $exit;    # has to be 1 at this point (unless we break it above!!!)
+    die $@ if $@ && ( $? == 128 || $? == 129 );
+    return $?;
 }
 
 sub has_staged_changes {
     my ($git) = @_;
     eval { $git->run( "diff", "--quiet", "--cached" ) };
-    my $err  = $@;
-    my $exit = $? >> 8;
-
-    die $@ if $exit != 0 && $exit != 1;
-    return if $exit == 0;
-    return $exit;    # has to be 1 at this point (unless we break it above!!!)
+    die $@ if $@ && ( $? == 128 || $? == 129 );
+    return $?;
 }
 
 sub diff_unstaged {

@@ -16,6 +16,7 @@ my $builder = Module::Build->new(
         'File::Temp'              => 0,    # unit tests
         Cwd                       => 0,    # unit tests
         'Git::Repository'         => 0,    # unit tests
+        'Test::Exception'         => 0,    # unit tests
     },
 
     # delete_share => '.', # NYI https://rt.cpan.org/Ticket/Display.html?id=92863
